@@ -2,7 +2,7 @@
 -- mysql -u sree -p
 -- use toyu
 -- tee hw.txt
-
+-- Refer to toyu database
 -- [1] List information of all classes of CSCI and CINF courses in the following manner.
 
 SELECT DISTINCT co.rubric, co.number, co.title, cl.classID, cl.facId, cl.year, cl.semester
