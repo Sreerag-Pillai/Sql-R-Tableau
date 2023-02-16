@@ -12,7 +12,7 @@ eg = read.table("C:/Users/manga/OneDrive/Desktop/CA.txt", header = TRUE)
 #verifying data
 summary(eg)
 boxplot(eg)
-#1. Find the estimation for the difference of population means (µ1 ??? µ2), where µ1 is for control, µ2 for oil spill.
+#1. Find the estimation for the difference of population means (Âµ1 ??? Âµ2), where Âµ1 is for control, Âµ2 for oil spill.
 
 #(a) Point estimate.
 
@@ -52,7 +52,7 @@ conf_int
 
 
 
-#2. Find out if there is enough evidence to support hypothesis that µ1 is larger than µ2 by 10 units, given ?? = 0.05.
+#2. Find out if there is enough evidence to support hypothesis that Âµ1 is larger than Âµ2 by 10 units, given ?? = 0.05.
 
 #(a) Set up hypotheses (H0 & H1) and tell the type of test.
 
