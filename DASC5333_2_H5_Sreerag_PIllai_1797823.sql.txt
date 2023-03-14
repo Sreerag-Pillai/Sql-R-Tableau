@@ -1,0 +1,194 @@
+
+
+/*
+(1) List the id, fname, lname of every caretaker who has not committed to the task
+'Officiating' (as shown in the commitment table).
++-------+-------+----------+
+| CT_Id | LName | FName |
++-------+-------+----------+
+| 2 | Khan | Joseph |
+| 3 | Khan | Jim |
+| 6 | Smith | Benjamin |
++-------+-------+----------+
+*/
+
+SELECT c.CT_Id, c.LName, c.FName 
+FROM Caretaker As c 
+WHERE c.CT_Id NOT IN
+(
+
+	SELECT cm.CT_Id 
+    FROM Commitment AS cm 
+    JOIN v_task AS t ON cm.VT_Id = t.Vt_Id 
+    WHERE t.Name = 'Officiating'
+	
+);
+
+/*
+(2) List the id, fname, lname of every caretaker who has committed to at least one
+task.
++-------+---------+-----------+
+| CT_Id | LName | FName |
++-------+---------+-----------+
+| 1 | Khan | Azalea |
+| 2 | Khan | Joseph |
+| 3 | Khan | Jim |
+| 4 | Johnson | Katie |
+| 5 | Johnson | Elizabeth |
++-------+---------+-----------+
+*/
+
+SELECT c.CT_Id, c.LName, c.FName 
+FROM Caretaker As c 
+WHERE c.CT_Id IN
+(
+
+	SELECT cm.CT_Id 
+    FROM Commitment AS cm 
+    JOIN v_task AS t ON cm.VT_Id = t.Vt_Id 
+    
+	
+);
+
+/*
+(3) List the names of all caretakers who committed to two or more tasks in the
+following manners. List also the ids of all the committed tasks.
++-------+-------------------+------------+
+| CT_Id | caretaker | task ids |
++-------+-------------------+------------+
+| 1 | Khan Azalea | 1; 3; 4; 5 |
+| 2 | Khan Joseph | 2; 5 |
+| 4 | Johnson Katie | 1; 4; 5 |
+| 5 | Johnson Elizabeth | 2; 4; 6 |
++-------+-------------------+------------+
+*/
+
+SELECT DISTINCT ct.CT_Id, CONCAT(ct.LName,' ', ct.FName) AS caretaker, GROUP_CONCAT(DISTINCT co.VT_Id ORDER BY co.VT_Id SEPARATOR '; ') AS 'task ids'
+FROM caretaker AS ct 
+INNER JOIN commitment co ON ct.CT_Id=co.CT_Id
+GROUP BY co.CT_Id 
+HAVING COUNT(DISTINCT co.VT_Id)>=2;
+
+
+/*
+(4) List the id, fname, lname of every 'enthusiastic' caretaker in the following
+manner: a person who
+[1] is a primary caretaker,
+[2] is a secondary caretaker, and
+[3] has committed to two or more tasks.
++-------+-----------------------+------------+
+| CT_Id | enthusiatic caretaker | task ids |
++-------+-----------------------+------------+
+| 1 | Khan Azalea | 1; 3; 4; 5 |
+| 2 | Khan Joseph | 2; 5 |
+| 5 | Johnson Elizabeth | 2; 4; 6 |
++-------+-----------------------+------------+
+*/
+
+SELECT DISTINCT ct.CT_Id, CONCAT(ct.LName,' ', ct.FName) AS 'enthusiatic caretaker', GROUP_CONCAT(DISTINCT co.VT_Id ORDER BY co.VT_Id SEPARATOR '; ') AS 'task ids'
+FROM caretaker AS ct 
+INNER JOIN commitment co ON ct.CT_Id=co.CT_Id
+WHERE co.CT_Id IN (
+	SELECT s.Main_CT_Id 
+	FROM swimmer s 
+	INNER JOIN othercaretaker oc ON s.Main_CT_Id=oc.CT_Id 
+	)
+GROUP BY co.CT_Id 
+HAVING COUNT(co.VT_Id)>=2;
+
+
+/*
+(5) List all caretaker names, with their committed task names and the event names
+of the committments in the following manner. Note that caretakers without amy
+committed task should also be shown. E.g. Benjamin Smith.
++---------+-----------+------------------+-------------+
+| LName | FName | Task Name | Meet Title |
++---------+-----------+------------------+-------------+
+| Khan | Azalea | Officiating | UHCL Open |
+| Khan | Azalea | Diecting traffic | UHCL Open |
+| Khan | Azalea | Officiating | Shell Trial |
+| Khan | Azalea | Recording | Shell Trial |
+| Khan | Joseph | Recording | UHCL Open |
+| Khan | Joseph | Recording | Shell Trial |
+| Khan | Jim | Recording | UHCL Open |
+| Johnson | Katie | Officiating | UHCL Open |
+| Johnson | Katie | Officiating | Shell Trial |
+| Johnson | Katie | Recording | Shell Trial |
+| Johnson | Elizabeth | Recording | UHCL Open |
+| Johnson | Elizabeth | Officiating | Shell Trial |
+| Johnson | Elizabeth | Diecting traffic | Shell Trial |
+| Smith | Benjamin | | |
++---------+-----------+------------------+-------------+
+*/
+
+SELECT DISTINCT c.LName, c.FName, Name AS 'Task Name', m.Title AS 'Meet Title'
+FROM caretaker c 
+LEFT JOIN commitment co ON c.ct_Id = co.ct_Id
+LEFT JOIN v_task vt ON vt.VT_Id=co.VT_Id
+LEFT JOIN v_tasklist vtl ON vtl.VTL_Id=vt.VTL_Id
+LEFT JOIN meet m ON m.MeetId=vtl.MeetId;
+
+/*
+(6) List the ids, names of caretakers, and their numbers of commitments. in the
+meet 'UHCL Open' in the following manner and order (by the descending order of
+the number of committed tasks in UHCL Open.)
++-------+-------------------+----------------------------------------+
+| CT_Id | caretaker | Number of committed tasks in UHCL Open |
++-------+-------------------+----------------------------------------+
+| 1 | Azalea Khan | 2 |
+| 2 | Joseph Khan | 1 |
+| 3 | Jim Khan | 1 |
+| 4 | Katie Johnson | 1 |
+| 5 | Elizabeth Johnson | 1 |
+| 6 | Benjamin Smith | 0 |
++-------+-------------------+----------------------------------------+
+*/
+
+WITH CARETAKER_COUNTS AS (SELECT DISTINCT c.CT_Id, COUNT(vt.VT_Id) AS committed_number
+FROM caretaker c LEFT JOIN commitment co 
+ON c.CT_Id = co.CT_Id
+LEFT JOIN v_task vt ON vt.VT_Id=co.VT_Id
+LEFT JOIN v_tasklist vtl ON vtl.VTL_Id=vt.VTL_Id
+LEFT JOIN meet m ON m.MeetId=vtl.MeetId
+WHERE m.Title='UHCL Open'
+GROUP BY c.CT_Id,m.Title
+ORDER BY COUNT(vt.VT_Id) DESC)
+
+SELECT c.CT_Id, CONCAT(c.FName,' ',c.LName) AS 'caretaker',COALESCE(committed_number,0) AS 'Number of committed tasks in UHCL Open'
+FROM caretaker c LEFT JOIN CARETAKER_COUNTS ctc ON c.CT_Id=ctc.CT_Id;
+
+
+/*
+
+(7) (Bonus: 20%) For every swimmer, list the id, name, number of events
+participated in the number of levels achieved (in the level history), and the number
+of secondary caretakers (as in the othercaretaker table) in the following manner.
++-----------+----------------+---------------------+-----------------------+------------------------+
+| SwimmerId | swimmer | # historical levels | # events participated | # secondary caretakers |
++-----------+----------------+---------------------+-----------------------+------------------------+
+| 1 | Bobby Khan | 3 | 6 | 2 |
+| 2 | Billy Khan | 2 | 4 | 1 |
+| 3 | Nina Khan | 2 | 5 | 2 |
+| 4 | Clara Johnson | 3 | 4 | 1 |
+| 5 | Philip Johnson | 2 | 4 | 0 |
+| 6 | Joe Fen | 2 | 1 | 0 |
++-----------+----------------+---------------------+-----------------------+------------------------+
+
+*/
+
+WITH l AS (SELECT DISTINCT l.SwimmerId, COUNT(l.LevelId) AS historical_levels
+FROM levelhistory AS l
+GROUP BY l.SwimmerId),
+p AS(SELECT p.SwimmerId, COUNT(p.EventId) AS events_participated
+FROM participation AS p
+GROUP BY SwimmerId),
+oct AS (SELECT oct.SwimmerId,COUNT(oct.CT_Id) AS secondary_caretakers
+FROM othercaretaker AS oct
+GROUP BY oct.SwimmerId)
+SELECT s.SwimmerId, CONCAT(s.FName,' ',s.LName) AS swimmer,
+		COALESCE(l.historical_levels,0) AS '# historical levels', 
+		COALESCE(p.events_participated,0) AS '# events participated',
+		COALESCE(oct.secondary_caretakers,0) AS '# secondary caretakers'
+FROM swimmer AS s LEFT JOIN l ON s.SwimmerId=l.SwimmerId
+LEFT JOIN p ON s.SwimmerId=p.SwimmerId
+LEFT JOIN oct ON s.SwimmerId=oct.SwimmerId;
