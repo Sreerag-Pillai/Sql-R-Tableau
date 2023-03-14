@@ -1,5 +1,5 @@
 
---REFER TO TOYU DATABASE
+--REFER TO TOYU DATABASE from creat_toyu.sql.txt
 /*
 (1) List the id, fname, lname of every caretaker who has not committed to the task
 'Officiating' (as shown in the commitment table).
